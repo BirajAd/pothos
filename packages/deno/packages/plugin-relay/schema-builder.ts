@@ -15,7 +15,7 @@ schemaBuilderProto.pageInfoRef = function pageInfoRef() {
     }
     const ref = this.objectRef<PageInfoShape>("PageInfo");
     pageInfoRefMap.set(this, ref);
-    const { cursorType = "String", hasNextPageFieldOptions = {} as never, hasPreviousPageFieldOptions = {} as never, startCursorFieldOptions = {} as never, endCursorFieldOptions = {} as never, } = this.options.relay ?? {};
+    const { pageInfoCursorType = this.options.relay?.cursorType ?? "String", hasNextPageFieldOptions = {} as never, hasPreviousPageFieldOptions = {} as never, startCursorFieldOptions = {} as never, endCursorFieldOptions = {} as never, } = this.options.relay ?? {};
     ref.implement({
         ...this.options.relay?.pageInfoTypeOptions,
         fields: (t) => ({
@@ -30,12 +30,12 @@ schemaBuilderProto.pageInfoRef = function pageInfoRef() {
             startCursor: t.expose("startCursor", {
                 nullable: true,
                 ...(startCursorFieldOptions as {}),
-                type: cursorType,
+                type: pageInfoCursorType,
             }) as never,
             endCursor: t.expose("endCursor", {
                 nullable: true,
                 ...(endCursorFieldOptions as {}),
-                type: cursorType,
+                type: pageInfoCursorType,
             }) as never,
         }),
     });
@@ -247,7 +247,7 @@ schemaBuilderProto.globalConnectionFields = function globalConnectionFields(fiel
 const mutationIdCache = createContextCache(() => new Map<string, string>());
 schemaBuilderProto.relayMutationField = function relayMutationField(fieldName, inputOptionsOrRef, { resolve, ...fieldOptions }, { name: payloadName = `${capitalize(fieldName)}Payload`, outputFields, interfaces, ...paylaodOptions }) {
     const { relay: { clientMutationIdInputOptions = {} as never, clientMutationIdFieldOptions = {} as never, mutationInputArgOptions = {} as never, } = {}, } = this.options;
-    const includeClientMutationId = this.options.relay?.clientMutationId !== "omit";
+    const includeClientMutationId = this.options.relay?.clientMutationId && this.options.relay?.clientMutationId !== "omit";
     let inputRef: InputObjectRef<unknown>;
     let argName = "input";
     if (inputOptionsOrRef instanceof InputObjectRef) {
@@ -377,7 +377,7 @@ schemaBuilderProto.connectionObject = function connectionObject({ type, name: co
 };
 schemaBuilderProto.edgeObject = function edgeObject({ type, name: edgeName, nodeNullable: nodeFieldNullable, nodeField, ...edgeOptions }) {
     verifyRef(type);
-    const { cursorType = "String", cursorFieldOptions = {} as never, nodeFieldOptions: { nullable: nodeNullable = false, ...nodeFieldOptions } = {} as never, } = this.options.relay ?? {};
+    const { edgeCursorType = this.options.relay?.cursorType ?? "String", cursorFieldOptions = {} as never, nodeFieldOptions: { nullable: nodeNullable = false, ...nodeFieldOptions } = {} as never, } = this.options.relay ?? {};
     const edgeRef = this.objectRef<{
         cursor: string;
         node: unknown;
@@ -399,7 +399,7 @@ schemaBuilderProto.edgeObject = function edgeObject({ type, name: edgeName, node
             }),
             cursor: t.expose("cursor", {
                 nullable: false,
-                type: cursorType,
+                type: edgeCursorType,
                 ...cursorFieldOptions,
             }) as never,
             ...edgeFields?.(t),
