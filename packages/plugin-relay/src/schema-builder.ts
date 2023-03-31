@@ -58,10 +58,10 @@ schemaBuilderProto.pageInfoRef = function pageInfoRef() {
     hasPreviousPageFieldOptions = {} as never,
     startCursorFieldOptions = {} as never,
     endCursorFieldOptions = {} as never,
-  } = this.options.relayOptions;
+  } = this.options.relay ?? {};
 
   ref.implement({
-    ...this.options.relayOptions.pageInfoTypeOptions,
+    ...this.options.relay?.pageInfoTypeOptions,
     fields: (t) => ({
       hasNextPage: t.exposeBoolean('hasNextPage', {
         nullable: false,
@@ -136,9 +136,9 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
 
       return defaultTypeResolver(value, context, info, graphQLType);
     },
-    ...this.options.relayOptions.nodeTypeOptions,
+    ...this.options.relay?.nodeTypeOptions,
     fields: (t) => ({
-      [this.options.relayOptions?.idFieldName ?? 'id']: t.globalID({
+      [this.options.relay?.idFieldName ?? 'id']: t.globalID({
         nullable: false,
         resolve: (parent) => {
           throw new PothosValidationError('id field not implemented');
@@ -147,7 +147,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
     }),
   });
 
-  const nodeQueryOptions = this.options.relayOptions?.nodeQueryOptions;
+  const nodeQueryOptions = this.options.relay?.nodeQueryOptions;
 
   if (nodeQueryOptions !== false) {
     const resolveNodeFn = nodeQueryOptions?.resolve;
@@ -157,7 +157,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
       (t) =>
         t.field({
           nullable: true,
-          ...this.options.relayOptions.nodeQueryOptions,
+          ...this.options.relay?.nodeQueryOptions,
           type: ref as InterfaceRef<unknown>,
           args: {
             id: t.arg.globalID({
@@ -191,7 +191,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
     );
   }
 
-  const nodesQueryOptions = this.options.relayOptions?.nodesQueryOptions;
+  const nodesQueryOptions = this.options.relay?.nodesQueryOptions;
 
   if (nodesQueryOptions !== false) {
     const resolveNodesFn = nodesQueryOptions?.resolve;
@@ -202,7 +202,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
           list: false,
           items: true,
         },
-        ...this.options.relayOptions.nodesQueryOptions,
+        ...this.options.relay?.nodesQueryOptions,
         type: [ref],
         args: {
           ids: t.arg.globalIDList({
@@ -288,10 +288,10 @@ schemaBuilderProto.node = function node(param, { interfaces, extensions, id, ...
   this.configStore.onTypeConfig(ref, (nodeConfig) => {
     nodeName = nodeConfig.name;
 
-    this.objectField(ref, this.options.relayOptions.idFieldName ?? 'id', (t) =>
+    this.objectField(ref, this.options.relay?.idFieldName ?? 'id', (t) =>
       t.globalID<{}, false, MaybePromise<GlobalIDShape<SchemaTypes>>>({
         nullable: false,
-        ...this.options.relayOptions.idFieldOptions,
+        ...this.options.relay?.idFieldOptions,
         ...id,
         args: {},
         resolve: (parent, args, context, info): MaybePromise<GlobalIDShape<SchemaTypes>> =>
@@ -362,14 +362,14 @@ schemaBuilderProto.relayMutationField = function relayMutationField(
   },
 ) {
   const {
-    relayOptions: {
+    relay: {
       clientMutationIdInputOptions = {} as never,
       clientMutationIdFieldOptions = {} as never,
       mutationInputArgOptions = {} as never,
-    },
+    } = {},
   } = this.options;
 
-  const includeClientMutationId = this.options.relayOptions.clientMutationId !== 'omit';
+  const includeClientMutationId = this.options.relay?.clientMutationId !== 'omit';
 
   let inputRef: InputObjectRef<unknown>;
   let argName = 'input';
@@ -386,7 +386,7 @@ schemaBuilderProto.relayMutationField = function relayMutationField(
     argName = argNameFromOptions;
 
     inputRef = this.inputType(inputName, {
-      ...this.options.relayOptions?.defaultMutationInputTypeOptions,
+      ...this.options.relay?.defaultMutationInputTypeOptions,
       ...inputOptions,
       fields: (t) => ({
         ...inputFields(t),
@@ -394,7 +394,7 @@ schemaBuilderProto.relayMutationField = function relayMutationField(
           ? {
               clientMutationId: t.id({
                 ...clientMutationIdInputOptions,
-                required: this.options.relayOptions.clientMutationId !== 'optional',
+                required: this.options.relay?.clientMutationId !== 'optional',
               }),
             }
           : {}),
@@ -403,7 +403,7 @@ schemaBuilderProto.relayMutationField = function relayMutationField(
   }
 
   const payloadRef = this.objectRef<unknown>(payloadName).implement({
-    ...this.options.relayOptions?.defaultPayloadTypeOptions,
+    ...this.options.relay?.defaultPayloadTypeOptions,
     ...paylaodOptions,
     interfaces: interfaces as never,
     fields: (t) => ({
@@ -411,7 +411,7 @@ schemaBuilderProto.relayMutationField = function relayMutationField(
       ...(includeClientMutationId
         ? {
             clientMutationId: t.id({
-              nullable: this.options.relayOptions.clientMutationId === 'optional',
+              nullable: this.options.relay?.clientMutationId === 'optional',
               ...clientMutationIdFieldOptions,
               resolve: (parent, args, context, info) =>
                 mutationIdCache(context).get(String(info.path.prev!.key))!,
@@ -466,7 +466,7 @@ schemaBuilderProto.connectionObject = function connectionObject(
       ...edgesFieldOptions
     } = {} as never,
     pageInfoFieldOptions = {} as never,
-  } = this.options.relayOptions;
+  } = this.options.relay ?? {};
 
   const connectionRef =
     this.objectRef<ConnectionShape<SchemaTypes, unknown, false>>(connectionName);
@@ -485,7 +485,7 @@ schemaBuilderProto.connectionObject = function connectionObject(
     | ObjectFieldsShape<SchemaTypes, ConnectionShape<SchemaTypes, unknown, false>>
     | undefined;
 
-  const { nodesOnConnection } = this.options.relayOptions;
+  const { nodesOnConnection } = this.options.relay ?? {};
   const edgesNullableOption = edgesNullableField ?? edgesNullable;
   const edgeListNullable =
     typeof edgesNullableOption === 'object' ? edgesNullableOption.list : !!edgesNullableOption;
@@ -495,7 +495,7 @@ schemaBuilderProto.connectionObject = function connectionObject(
       : false;
 
   this.objectType(connectionRef, {
-    ...(this.options.relayOptions?.defaultConnectionTypeOptions as {}),
+    ...(this.options.relay?.defaultConnectionTypeOptions as {}),
     ...(connectionOptions as {}),
     fields: (t) => ({
       pageInfo: t.field({
@@ -521,7 +521,7 @@ schemaBuilderProto.connectionObject = function connectionObject(
                 items:
                   edgeItemsNullable ??
                   nodeNullable ??
-                  this.options.relayOptions?.nodeFieldOptions?.nullable ??
+                  this.options.relay?.nodeFieldOptions?.nullable ??
                   false,
               },
               resolve: (con) =>
@@ -560,7 +560,7 @@ schemaBuilderProto.edgeObject = function edgeObject({
     cursorType = 'String',
     cursorFieldOptions = {} as never,
     nodeFieldOptions: { nullable: nodeNullable = false, ...nodeFieldOptions } = {} as never,
-  } = this.options.relayOptions;
+  } = this.options.relay ?? {};
 
   const edgeRef = this.objectRef<{
     cursor: string;
@@ -578,7 +578,7 @@ schemaBuilderProto.edgeObject = function edgeObject({
     | undefined;
 
   this.objectType(edgeRef, {
-    ...(this.options.relayOptions?.defaultEdgeTypeOptions as {}),
+    ...(this.options.relay?.defaultEdgeTypeOptions as {}),
     ...edgeOptions,
     fields: (t) => ({
       node: t.field({
