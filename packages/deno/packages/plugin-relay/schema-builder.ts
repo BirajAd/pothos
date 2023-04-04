@@ -5,10 +5,10 @@ import { NodeRef } from './node-ref.ts';
 import { ConnectionShape, GlobalIDShape, PageInfoShape } from './types.ts';
 import { capitalize, resolveNodes } from './utils/index.ts';
 const schemaBuilderProto = SchemaBuilder.prototype as PothosSchemaTypes.SchemaBuilder<SchemaTypes>;
-const pageInfoRefMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ObjectRef<PageInfoShape>>();
-const nodeInterfaceRefMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, InterfaceRef<{}>>();
-export const connectionRefs = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ObjectRef<ConnectionShape<SchemaTypes, unknown, boolean>>[]>();
-export const globalConnectionFieldsMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ((ref: ObjectRef<ConnectionShape<SchemaTypes, unknown, boolean>>) => void)[]>();
+const pageInfoRefMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ObjectRef<SchemaTypes, PageInfoShape>>();
+const nodeInterfaceRefMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, InterfaceRef<SchemaTypes, {}>>();
+export const connectionRefs = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ObjectRef<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>[]>();
+export const globalConnectionFieldsMap = new WeakMap<PothosSchemaTypes.SchemaBuilder<SchemaTypes>, ((ref: ObjectRef<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>) => void)[]>();
 schemaBuilderProto.pageInfoRef = function pageInfoRef() {
     if (pageInfoRefMap.has(this)) {
         return pageInfoRefMap.get(this)!;
@@ -99,7 +99,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
         this.queryField("node", (t) => t.field({
             nullable: true,
             ...this.options.relay?.nodeQueryOptions,
-            type: ref as InterfaceRef<unknown>,
+            type: ref as InterfaceRef<SchemaTypes, unknown>,
             args: {
                 id: t.arg.globalID({
                     required: true,
@@ -124,7 +124,7 @@ schemaBuilderProto.nodeInterfaceRef = function nodeInterfaceRef() {
                         id: string;
                         typename: string;
                     }]), (nodes) => nodes[0]),
-        }) as FieldRef<unknown>);
+        }) as FieldRef<SchemaTypes, unknown>);
     }
     const nodesQueryOptions = this.options.relay?.nodesQueryOptions;
     if (nodesQueryOptions !== false) {
@@ -225,7 +225,7 @@ schemaBuilderProto.node = function node(param, { interfaces, extensions, id, ...
     return nodeRef as never;
 };
 schemaBuilderProto.globalConnectionField = function globalConnectionField(name, field) {
-    const onRef = (ref: ObjectRef<ConnectionShape<SchemaTypes, unknown, boolean>>) => {
+    const onRef = (ref: ObjectRef<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>) => {
         this.objectField(ref, name, field as ObjectFieldThunk<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>);
     };
     connectionRefs.get(this)?.forEach((ref) => void onRef(ref));
@@ -235,7 +235,7 @@ schemaBuilderProto.globalConnectionField = function globalConnectionField(name, 
     globalConnectionFieldsMap.get(this)!.push(onRef);
 };
 schemaBuilderProto.globalConnectionFields = function globalConnectionFields(fields) {
-    const onRef = (ref: ObjectRef<ConnectionShape<SchemaTypes, unknown, boolean>>) => {
+    const onRef = (ref: ObjectRef<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>) => {
         this.objectFields(ref, fields as ObjectFieldsShape<SchemaTypes, ConnectionShape<SchemaTypes, unknown, boolean>>);
     };
     connectionRefs.get(this)?.forEach((ref) => void onRef(ref));
@@ -248,7 +248,7 @@ const mutationIdCache = createContextCache(() => new Map<string, string>());
 schemaBuilderProto.relayMutationField = function relayMutationField(fieldName, inputOptionsOrRef, { resolve, ...fieldOptions }, { name: payloadName = `${capitalize(fieldName)}Payload`, outputFields, interfaces, ...paylaodOptions }) {
     const { relay: { clientMutationIdInputOptions = {} as never, clientMutationIdFieldOptions = {} as never, mutationInputArgOptions = {} as never, } = {}, } = this.options;
     const includeClientMutationId = this.options.relay?.clientMutationId && this.options.relay?.clientMutationId !== "omit";
-    let inputRef: InputObjectRef<unknown>;
+    let inputRef: InputObjectRef<SchemaTypes, unknown>;
     let argName = "input";
     if (inputOptionsOrRef instanceof InputObjectRef) {
         inputRef = inputOptionsOrRef;

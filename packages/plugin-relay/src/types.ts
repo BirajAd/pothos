@@ -1,5 +1,6 @@
 import { GraphQLResolveInfo } from 'graphql';
 import {
+  ArgumentRef,
   EmptyToOptional,
   FieldKind,
   FieldNullability,
@@ -52,7 +53,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
           Types,
           OutputRefShape<GlobalIDShape<Types> | string>,
           boolean,
-          { id: InputFieldRef<InputShape<Types, 'ID'>> },
+          { id: ArgumentRef<Types, InputShape<Types, 'ID'>> },
           Promise<unknown>
         >,
         'args' | 'resolve' | 'type'
@@ -74,7 +75,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
           Types,
           [OutputRefShape<GlobalIDShape<Types> | string>],
           FieldNullability<[unknown]>,
-          { ids: InputFieldRef<InputShape<Types, 'ID'>[]> },
+          { ids: ArgumentRef<Types, InputShape<Types, 'ID'>[]> },
           Promise<unknown>[]
         >,
         'args' | 'resolve' | 'type'
@@ -127,7 +128,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
     PothosSchemaTypes.ObjectFieldOptions<
       Types,
       {},
-      ObjectRef<{}>,
+      ObjectRef<Types, {}>,
       Types['DefaultNodeNullability'],
       {},
       GlobalIDShape<Types> | string
@@ -140,7 +141,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
     PothosSchemaTypes.ObjectFieldOptions<
       Types,
       {},
-      [ObjectRef<{}>],
+      [ObjectRef<Types, {}>],
       Types['DefaultEdgesNullability'],
       {},
       unknown[]
@@ -234,7 +235,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
       {},
       OutputRef<ConnectionShape<Types, unknown, false, true, true>>,
       boolean,
-      InputFieldsFromShape<DefaultConnectionArguments>,
+      InputFieldsFromShape<Types, DefaultConnectionArguments, 'Arg'>,
       ConnectionShape<Types, unknown, false, true, true>
     >,
     'args' | 'resolve' | 'type'
@@ -245,7 +246,7 @@ export type RelayPluginOptions<Types extends SchemaTypes> = EmptyToOptional<{
         PothosSchemaTypes.ObjectFieldOptions<
           Types,
           {},
-          [ObjectRef<{}>],
+          [ObjectRef<Types, {}>],
           {
             list: false;
             items: Types['DefaultNodeNullability'];
@@ -283,10 +284,13 @@ export type ConnectionEdgesShape<
 > = ShapeFromListTypeParam<
   Types,
   [
-    ObjectRef<{
-      cursor: string;
-      node: NodeNullable extends false ? T : T | null | undefined;
-    }>,
+    ObjectRef<
+      Types,
+      {
+        cursor: string;
+        node: NodeNullable extends false ? T : T | null | undefined;
+      }
+    >,
   ],
   EdgesNullable
 >;
@@ -658,7 +662,7 @@ export type RelayMutationFieldOptions<
     OutputRef<ResolveShape>,
     Nullable,
     {
-      [K in InputName]: InputFieldRef<InputShapeWithClientMutationId<Types, Fields>>;
+      [K in InputName]: ArgumentRef<Types, InputShapeWithClientMutationId<Types, Fields>>;
     },
     'Mutation',
     ResolveShape,
@@ -684,5 +688,5 @@ export type InputShapeWithClientMutationId<
   Types extends SchemaTypes,
   Fields extends InputFieldMap,
 > = InputShapeFromFields<
-  Fields & { clientMutationId: InputFieldRef<Types['Scalars']['ID']['Input']> }
+  Fields & { clientMutationId: InputFieldRef<Types, Types['Scalars']['ID']['Input']> }
 >;
