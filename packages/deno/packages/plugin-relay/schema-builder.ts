@@ -311,7 +311,7 @@ schemaBuilderProto.relayMutationField = function relayMutationField(fieldName, i
 };
 schemaBuilderProto.connectionObject = function connectionObject({ type, name: connectionName, edgesNullable: edgesNullableField, nodeNullable, edgesField, ...connectionOptions }, edgeOptionsOrRef) {
     verifyRef(type);
-    const { edgesFieldOptions: { nullable: edgesNullable = { items: true, list: false }, ...edgesFieldOptions } = {} as never, pageInfoFieldOptions = {} as never, } = this.options.relay ?? {};
+    const { edgesFieldOptions: { nullable: edgesNullable = { items: true, list: true }, ...edgesFieldOptions } = {} as never, pageInfoFieldOptions = {} as never, } = this.options.relay ?? {};
     const connectionRef = this.objectRef<ConnectionShape<SchemaTypes, unknown, false>>(connectionName);
     const edgeRef = edgeOptionsOrRef instanceof ObjectRef
         ? edgeOptionsOrRef
@@ -324,10 +324,11 @@ schemaBuilderProto.connectionObject = function connectionObject({ type, name: co
     const connectionFields = connectionOptions.fields as unknown as ObjectFieldsShape<SchemaTypes, ConnectionShape<SchemaTypes, unknown, false>> | undefined;
     const { nodesOnConnection } = this.options.relay ?? {};
     const edgesNullableOption = edgesNullableField ?? edgesNullable;
-    const edgeListNullable = typeof edgesNullableOption === "object" ? edgesNullableOption.list : !!edgesNullableOption;
+    const edgeListNullable = !!((typeof edgesNullableOption === "object" ? edgesNullableOption.list : edgesNullableOption) ??
+        true);
     const edgeItemsNullable = typeof edgesNullableOption === "object" && "items" in (edgesNullableOption as {})
         ? edgesNullableOption.items
-        : false;
+        : this.options.relay?.nodeFieldOptions?.nullable ?? true;
     this.objectType(connectionRef, {
         ...(this.options.relay?.defaultConnectionTypeOptions as {}),
         ...(connectionOptions as {}),
@@ -340,7 +341,7 @@ schemaBuilderProto.connectionObject = function connectionObject({ type, name: co
             }),
             edges: t.field({
                 nullable: (edgesNullableField ?? edgesNullable) as {
-                    list: false;
+                    list: true;
                     items: true;
                 },
                 ...edgesFieldOptions,
@@ -359,7 +360,7 @@ schemaBuilderProto.connectionObject = function connectionObject({ type, name: co
                             items: edgeItemsNullable ??
                                 nodeNullable ??
                                 this.options.relay?.nodeFieldOptions?.nullable ??
-                                false,
+                                true,
                         },
                         resolve: (con) => completeValue(con.edges, (edges) => edges?.map((e) => e?.node) ?? (edgeListNullable ? null : [])) as never,
                     }),
